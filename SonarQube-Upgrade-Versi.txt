@@ -1,1 +1,56 @@
-tes
+C. Download & Install SonarQube
+1. Cek paket SonarQube terbaru, misalnya paket pada edisi komunitas. Gunakan browser untuk masuk ke link https://binaries.sonarsource.com/Distribution/sonarqube
+Pilih paket terbaru yang ber-extensi .zip, misalnya dapat paket sonarqube-9.3.0.51899.zip
+
+2. Download paketnya
+$ sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.3.0.51899.zip
+
+3. STOP SonarQube
+$ sudo systemctl stop sonar
+
+4. Rename versi lama
+$ sudo cd /opt
+$ sudo mv sonarqube sonarqube_old
+$ cd ~
+
+5. Unzip paket yang sudah di download
+sudo unzip sonarqube-9.3.0.51899.zip
+
+6. Pindahkan ke /opt/sonarqube
+sudo mv sonarqube-9.3.0.51899 /opt/sonarqube
+
+7. Beri akses user sonar ke aplikasi sonar
+$ sudo chown -R sonar:sonar /opt/sonarqube
+
+8. Lakukan konfigurasi pada seting SonarQube
+$ sudo vi /opt/sonarqube/conf/sonar.properties
+
+Cari baris ini:
+#sonar.jdbc.username=
+#sonar.jdbc.password=
+#sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?currentSchema=my_schema
+
+ubah menjadi:
+sonar.jdbc.username=sonar
+sonar.jdbc.password=password_yang_sulit_ditebak
+sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
+
+Simpan konfigurasi
+
+9. Lakukan perubahan pada skrip sonar
+$ sudo vi /opt/sonarqube/bin/linux-x86-64/sonar.sh
+
+Cari baris kode:
+#RUN_AS_USER=
+
+Ubah menjadi:
+RUN_AS_USER=sonar
+
+10. Jalankan SonarQube
+$ sudo systemctl start sonar
+
+11. Cek Status aplikasi SonarQube
+$ sudo systemctl status sonar
+
+12. Lakukan update database via browser
+http://IP_komputer_dimana_sonarQube_diinstall:9000/setup
