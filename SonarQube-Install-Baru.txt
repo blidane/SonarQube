@@ -1,4 +1,4 @@
-A. Java --> OpenJDK 11
+# A. Java --> OpenJDK 11
 1. Cek Apakah Java sudah ter-install
 $ java --version
 
