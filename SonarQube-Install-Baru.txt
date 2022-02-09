@@ -1,1 +1,147 @@
-Tes
+A. Java --> OpenJDK 11
+1. Cek Apakah Java sudah ter-install
+$ java --version
+
+2. Jika belum terinstall atau versi belum sesuai, lakukan installasi
+$ sudo apt-get install openjdk-11-jdk -y
+
+B. Install & Konfigurasi Database --> PostgreSQL
+1. Tambahkan Repository PostgreSQL
+$ sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+
+2. Download & Tambahkan KEY PostgreSQL
+$ wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -
+
+3. Install PostgreSQL
+$ sudo apt install postgresql postgresql-contrib -y
+
+4. Seting agar PostgreSQL otomatis jalan kalau restart Ubuntu
+$ sudo systemctl enable postgresql
+
+5. Jalankan PostgreSQL
+$ sudo systemctl start postgresql
+
+6. Ganti password user postgres pada Ubuntu dengan password baru (dicatat / dihafal ya)
+$ sudo passwd postgres
+
+7. Masuk terminal ubuntu sebagai psotgres
+$ su - postgres
+
+8. Buat user baru di terminal Ubuntu
+$ createuser sonar
+
+9. Masuk ke database PostgreSQL
+$ psql
+
+10. Buat user sonar dalam database
+postgres=# ALTER USER sonar WITH ENCRYPTED password 'password_yang_sulit_ditebak';
+
+11. Buat instance database dalam postgreSQL
+postgres=# CREATE DATABASE sonarqube OWNER sonar;
+
+12. Beri akses user database ke instance database
+postgres=# GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;
+
+13. Keluar dari database postgreSQL
+postgres=# \q
+
+14. Keluar dari user postgres di Ubuntu
+$ exit
+
+C. Download & Install SonarQube
+1. Install terlebih dahulu keperluan untuk unzip
+$ sudo apt-get install zip -y
+
+2. Cek paket SonarQube terbaru, misalnya paket pada edisi komunitas. Gunakan browser untuk masuk ke link https://binaries.sonarsource.com/Distribution/sonarqube
+Pilih paket terbaru yang ber-extensi .zip, misalnya dapat paket sonarqube-9.3.0.51899.zip
+
+3. Download paketnya
+$ sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.3.0.51899.zip
+
+4. Unzip paket yang sudah di download
+sudo unzip sonarqube-9.3.0.51899.zip
+
+5. Pindahkan ke /opt/sonarqube
+sudo mv sonarqube-9.3.0.51899 /opt/sonarqube
+
+6. Buat Group di terminal Ubuntu
+$ sudo groupadd sonar
+
+7. Tambahkan akses ke /opt/sonarqube
+$ sudo useradd -d /opt/sonarqube -g sonar sonar
+
+8. Beri akses user sonar ke aplikasi sonar
+$ sudo chown -R sonar:sonar /opt/sonarqube
+
+9. Lakukan konfigurasi pada seting SonarQube
+$ sudo vi /opt/sonarqube/conf/sonar.properties
+
+Cari baris ini:
+#sonar.jdbc.username=
+#sonar.jdbc.password=
+#sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?currentSchema=my_schema
+
+ubah menjadi:
+sonar.jdbc.username=sonar
+sonar.jdbc.password=password_yang_sulit_ditebak
+sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
+
+Simpan konfigurasi
+
+10. Lakukan perubahan pada skrip sonar
+$ sudo vi /opt/sonarqube/bin/linux-x86-64/sonar.sh
+
+Cari baris kode:
+#RUN_AS_USER=
+
+Ubah menjadi:
+RUN_AS_USER=sonar
+
+11. Buat Service sonar agar mudah di panggil
+$ sudo vi /etc/systemd/system/sonar.service
+
+isi dengan baris kode berikut:
+# baris awal
+[Unit]
+Description=SonarQube service
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+
+User=sonar
+Group=sonar
+Restart=always
+
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+#baris akhir
+
+12. Seting agar aplikasi sonarQube otomatis jalan jika restart Ubuntu
+$ sudo systemctl enable sonar
+
+13. Jalankan SonarQube
+$ sudo systemctl start sonar
+
+14. Cek Status aplikasi SonarQube
+$ sudo systemctl status sonar
+
+15. (tambahan jika perlu) lakukan penyesesuaian pada kernel linux
+$ sudo nano /etc/sysctl.conf
+
+tambahkan:
+vm.max_map_count=262144
+fs.file-max=65536
+ulimit -n 65536
+ulimit -u 4096
+
+Simpan perubahan, dan lakukan restart Ubuntu
+
+16. Masuk dan gunakan SonarQube untuk pertama kali, gunakan browser kesayangan
+http://IP_komputer_dimana_sonarQube_diinstall:9000
